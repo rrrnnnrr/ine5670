@@ -1,20 +1,44 @@
 """
-Caso o link nao bata com o esperado. guarda resultado 400 com mensagem de conteudo inesperado no banco
+Descrição:
+Este arquivo implementa um servidor web utilizando Flask, projetado para receber
+a URL de uma NFC-e, extrair seus dados e armazená-los em um banco de dados
+Supabase.
 
-Caso nota nao exista no banco, guarda resultado no banco  e guarda codigo 200 na fila de feedbacks
+O processo consiste em:
+1.  Receber uma requisição POST no endpoint '/nota' contendo a URL da nota fiscal.
+2.  Utilizar o Selenium para carregar dinamicamente a página web da URL,
+    garantindo que todo o conteúdo gerado por JavaScript seja renderizado.
+3.  Após o carregamento, o conteúdo HTML completo da página é extraído.
+4.  A biblioteca BeautifulSoup é usada para analisar (parse) o HTML e extrair
+    informações detalhadas da nota, como dados do estabelecimento (nome, CNPJ,
+    endereço), data da compra, valores totais (valor pago, descontos) e uma
+    lista completa de todos os itens adquiridos.
+5.  Os dados extraídos são então inseridos em duas tabelas no banco de dados
+    Supabase:
+    - 'compra': armazena as informações gerais da nota fiscal.
+    - 'produto': armazena cada item individual da compra, associado à sua
+      respectiva nota pela chave de acesso.
 
-Caso nota exista no banco, guarda código 409 na fila de feedbacks
+Como executar:
+Certifique-se de que todas as dependências estão instaladas e execute o
+servidor com o seguinte comando no terminal:
+`flask --app webserver.py run`
 
-Caso tenha havido alguma exceção, guarda codigo 400 com mensagem da excessao na fila de feedbacks 
-
-Retorna o código e mensagem do código
----
-
-GET /feedback
-Retorna primeiro codigo guardado na fila (FIFO)
-
-------> Rodar com `flask --app webserver.py run` !!!
-
+TODO:
+1. Coleta de resultados de tentativas (feedback) de inserção de nova NFC-e 
+(nota fiscal)
+    1.1 Armazenamento das mensagens: criar uma lista de dicionários que contém 
+    os atributos "codigo" e "mensagem" para serem usados posteriormente na 
+    requisicao GET que pegara o feedback armazenado primeiro.
+        - Caso o link nao bata com o esperado. guarda resultado 400 com mensagem 
+        de conteudo inesperado no banco
+        - Caso nota nao exista no banco, guarda resultado no banco  e guarda 
+        codigo 200 na fila de feedbacks
+        - Caso nota exista no banco, guarda código 409 na fila de feedbacks
+        - Caso tenha havido alguma exceção, guarda codigo 400 com mensagem da 
+        excessao na fila de feedbacks 
+    1.2 Requisicao GET feedback: criar uma requisicao http do tipo GET que retorna
+    o feedback mais antigo (armazenado primeiro) armazenado na lista criada em 1.1.
 """
 import traceback
 
