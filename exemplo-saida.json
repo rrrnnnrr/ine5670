@@ -1,0 +1,85 @@
+{
+    "nome_comercio": "J VARGAS SUPERMERCADO LTDA",
+    "CNPJ": "17.737.476/0003-74",
+    "endereco": "RUA JOSÉ BARTOLOMEU VIEIRA , 38 , , FORQUILHAS , SAO JOSE , SC",
+    "data_compra": "12/07/2025",
+    "itens": [
+        {
+            "codigo_item": "1243",
+            "nome_item": "ALHO A GRANEL KG",
+            "quantidade": "0,05",
+            "tipo_unidade": "KG",
+            "valor_unidade": "41,99",
+            "valor_total": "2,10"
+        },
+        {
+            "codigo_item": "63880",
+            "nome_item": "QUEIJO DELLA VITA 40",
+            "quantidade": "1",
+            "tipo_unidade": "UNID",
+            "valor_unidade": "21,99",
+            "valor_total": "21,99"
+        },
+        {
+            "codigo_item": "53128",
+            "nome_item": "QUEIJO RALADO KUNZLE",
+            "quantidade": "1",
+            "tipo_unidade": "UNID",
+            "valor_unidade": "4,99",
+            "valor_total": "4,99"
+        },
+        {
+            "codigo_item": "2608",
+            "nome_item": "MAC. ROSANE 500G ESP",
+            "quantidade": "2",
+            "tipo_unidade": "UNID",
+            "valor_unidade": "3,79",
+            "valor_total": "7,58"
+        },
+        {
+            "codigo_item": "62590",
+            "nome_item": "SARDINHA 88 125G TOM",
+            "quantidade": "2",
+            "tipo_unidade": "UNID",
+            "valor_unidade": "5,99",
+            "valor_total": "11,98"
+        },
+        {
+            "codigo_item": "80631",
+            "nome_item": "LEITE PIRACANJUBA 1L",
+            "quantidade": "2",
+            "tipo_unidade": "UNID",
+            "valor_unidade": "5,49",
+            "valor_total": "10,98"
+        },
+        {
+            "codigo_item": "42981",
+            "nome_item": "CREME DE LEITE PIRAC",
+            "quantidade": "2",
+            "tipo_unidade": "UNID",
+            "valor_unidade": "3,99",
+            "valor_total": "7,98"
+        },
+        {
+            "codigo_item": "7775",
+            "nome_item": "SUCO MACROVITA 300ML",
+            "quantidade": "1",
+            "tipo_unidade": "UNID",
+            "valor_unidade": "6,99",
+            "valor_total": "6,99"
+        },
+        {
+            "codigo_item": "8",
+            "nome_item": "BATATA LAVADA KG",
+            "quantidade": "2",
+            "tipo_unidade": "KG",
+            "valor_unidade": "3,99",
+            "valor_total": "7,98"
+        }
+    ],
+    "qtd_total_itens": "9",
+    "valor_total": "82,57",
+    "desconto": "0,80",
+    "valor_pago": "81,77",
+    "chave_acesso": "42250717737476000374650040001083871677952110"
+}
