@@ -72,13 +72,37 @@ def hello_world():
 def nota():
     try:
         content = request.form['content']
-        nfce = extrair_dados_nfce(extrair_HTML(content))
-        inserir_dados_nfce_bd(nfce)
-        return jsonify(nfce), 200
+        if 'https://sat.sef.sc.gov.br/tax.NET/Sat.DFe.NFCe.Web/Consultas/NFCe_Detalhes.aspx?' in content:
+            nfce = extrair_dados_nfce(extrair_HTML(content))
+            inserir_dados_nfce_bd(nfce)
+            return jsonify(nfce), 200
+        else:
+            feedbacks.append(
+                {'Codigo': 400, 
+                 'Mensagem': 'URL nao bate com o esperado.'})
+
+    except Exception as e:
+        print(f"Um erro ocorreu: {e}")
+        traceback.print_exc()
+        feedbacks.append({'Codigo': 500, 'Mensagem': 'Erro desconhecido.'})
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/feedback', methods=['GET'])
+def recebe_feedback():
+    """
+    Envia uma requisição para o Arduino acender o LED da cor especificada por 4 segundos.
+    """
+    try:
+        if feedbacks:
+            feedback = feedbacks.pop()
+            return jsonify(feedback), 200
+        else:
+            print('Não há nenhum feedback!')
     except Exception as e:
         print(f"Um erro ocorreu: {e}")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
 
 def extrair_HTML(url):
     """
@@ -259,6 +283,13 @@ def inserir_dados_nfce_bd(scrapped):
     """
     data_hora_obj = datetime.strptime(scrapped['data_compra'], "%d/%m/%Y %H:%M:%S")
     string_iso_8601_com_tz = data_hora_obj.replace(tzinfo=ZoneInfo("America/Sao_Paulo")).isoformat()
+
+    response = (
+        supabase.table("compra")
+        .select("chave")
+        .execute()
+    )
+
     
     supabase.table("compra").insert({"chave": scrapped['chave_acesso'].replace(',', '.'), 
                 "data": string_iso_8601_com_tz, 
@@ -270,3 +301,5 @@ def inserir_dados_nfce_bd(scrapped):
                 "cnpj": scrapped['CNPJ']}).execute()
     
     supabase.table("produto").insert(scrapped['itens']).execute()
+
+    feedbacks.append({'Codigo': 200, 'Mensagem': 'Nota adicionada ao banco.'})
