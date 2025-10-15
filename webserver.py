@@ -36,7 +36,7 @@ TODO:
         codigo 200 na fila de feedbacks
         - Caso nota exista no banco, guarda código 409 na fila de feedbacks
         - Caso tenha havido alguma exceção, guarda codigo 400 com mensagem da 
-        excessao na fila de feedbacks 
+        excessao na fila de feedbacks
     1.2 Requisicao GET feedback: criar uma requisicao http do tipo GET que retorna
     o feedback mais antigo (armazenado primeiro) armazenado na lista criada em 1.1.
 """
@@ -74,12 +74,11 @@ def nota():
         content = request.form['content']
         if 'https://sat.sef.sc.gov.br/tax.NET/Sat.DFe.NFCe.Web/Consultas/NFCe_Detalhes.aspx?' in content:
             nfce = extrair_dados_nfce(extrair_HTML(content))
-            inserir_dados_nfce_bd(nfce)
-            return jsonify(nfce), 200
+            result, status = inserir_dados_nfce_bd(nfce)
+            return jsonify(result), status
         else:
-            feedbacks.append(
-                {'Codigo': 400, 
-                 'Mensagem': 'URL nao bate com o esperado.'})
+            feedbacks.append({'Codigo': 400, 'Mensagem': 'URL nao bate com o esperado.'})
+            return jsonify({'error': 'URL nao bate com o esperado.'}), 400
 
     except Exception as e:
         print(f"Um erro ocorreu: {e}")
@@ -145,7 +144,7 @@ def extrair_HTML(url):
         # 3. Pega o código-fonte da página APÓS a execução do JavaScript
         html_completo = driver.page_source
         return html_completo
-        
+
     finally:
         # Garante que o navegador seja fechado ao final
         if driver:
@@ -281,25 +280,64 @@ def inserir_dados_nfce_bd(scrapped):
         None: A função não retorna valores, apenas executa as operações de
               inserção no banco de dados.
     """
-    data_hora_obj = datetime.strptime(scrapped['data_compra'], "%d/%m/%Y %H:%M:%S")
+    
+    # Valida e formata data
+    try:
+        data_hora_obj = datetime.strptime(scrapped.get('data_compra', ''), "%d/%m/%Y %H:%M:%S")
+    except Exception as e:
+        feedbacks.append({'Codigo': 400, 'Mensagem': f'Formato de data invalido: {e}'})
+        return {'error': f'Formato de data invalido: {e}'}, 400
+
     string_iso_8601_com_tz = data_hora_obj.replace(tzinfo=ZoneInfo("America/Sao_Paulo")).isoformat()
 
-    response = (
-        supabase.table("compra")
-        .select("chave")
-        .execute()
-    )
+    # Normaliza a chave antes de consultar
+    chave_normalizada = (scrapped.get('chave_acesso') or '').replace(',', '.').strip()
 
-    
-    supabase.table("compra").insert({"chave": scrapped['chave_acesso'].replace(',', '.'), 
-                "data": string_iso_8601_com_tz, 
-                "valor_total": scrapped['valor_total'].replace(',', '.') if scrapped['valor_total'] else None, 
-                "desconto": scrapped['desconto'].replace(',', '.') if scrapped['desconto'] else None,
-                "valor_pago": scrapped['valor_pago'].replace(',', '.'),
-                "nome_comercio": scrapped['nome_comercio'],
-                "endereco": scrapped["endereco"],
-                "cnpj": scrapped['CNPJ']}).execute()
-    
-    supabase.table("produto").insert(scrapped['itens']).execute()
+    if not chave_normalizada:
+        feedbacks.append({'Codigo': 400, 'Mensagem': 'Chave de acesso ausente.'})
+        return {'error': 'Chave de acesso ausente.'}, 400
+
+    # Verifica se a nota já existe no banco
+    try:
+        resp = (
+            supabase.table("compra")
+            .select("chave")
+            .eq("chave", chave_normalizada)
+            .execute()
+        )
+    except Exception as e:
+        feedbacks.append({'Codigo': 500, 'Mensagem': f'Erro ao verificar existência da nota: {e}'})
+        return {'error': f'Erro ao verificar existência da nota: {e}'}, 500
+
+    existing = resp.get("data") if isinstance(resp, dict) else getattr(resp, "data", None)
+
+    if existing and len(existing) > 0:
+        feedbacks.append({'Codigo': 409, 'Mensagem': 'Nota ja existe no banco.'})
+        return {'message': 'Nota ja existe no banco.'}, 409
+
+    # Prepara campos numéricos para inserção no banco de dados
+    def norm_num(v):
+        return v.replace(',', '.') if v else None
+
+    try:
+        supabase.table("compra").insert({
+            "chave": chave_normalizada,
+            "data": string_iso_8601_com_tz,
+            "valor_total": norm_num(scrapped.get('valor_total')),
+            "desconto": norm_num(scrapped.get('desconto')),
+            "valor_pago": norm_num(scrapped.get('valor_pago')),
+            "nome_comercio": scrapped.get('nome_comercio'),
+            "endereco": scrapped.get("endereco"),
+            "cnpj": scrapped.get('CNPJ')
+        }).execute()
+
+        produtos = scrapped.get('itens', [])
+        if produtos:
+            supabase.table("produto").insert(produtos).execute()
+
+    except Exception as e:
+        feedbacks.append({'Codigo': 500, 'Mensagem': f'Erro ao inserir nota: {e}'})
+        return {'error': f'Erro ao inserir nota: {e}'}, 500
 
     feedbacks.append({'Codigo': 200, 'Mensagem': 'Nota adicionada ao banco.'})
+    return {'message': 'Nota adicionada ao banco.'}, 200
